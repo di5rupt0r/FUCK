@@ -1,44 +1,69 @@
-import redis
-import hashlib
+# main.py
 
-def identifier(hash_str) -> str:
-    tamanho = len(hash_str)
+import sys
+import argparse
+import data_manager
+import config
+from typing import cast, Dict
 
-    hash_str = hash_str.lower()
+def main():
+    parser = argparse.ArgumentParser(
+        description="Ferramenta de lookup de hash em uma base Redis.",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        'hash_input', 
+        nargs='?', 
+        default=None,
+        help="A hash a ser procurada. Se não for fornecida em modo interativo."
+    )
+    parser.add_argument(
+        '--update',
+        action='store_true',
+        help="Verifica por novas wordlists e atualiza a base de dados do Redis."
+    )
+    args = parser.parse_args()
 
-    if not all(c in '0123456789abcdef' for c in hash_str):
-        return "Formato inválido (não hexadecimal)"
-    if tamanho == 32:
-        return "MD5"
-    elif tamanho == 40:
-        return "SHA-1"
-    elif tamanho == 56:
-        return "SHA-224"
-    elif tamanho == 64:
-        return "SHA-256"
-    elif tamanho == 96:
-        return "SHA-384"
-    elif tamanho == 128:
-        return "SHA-512"
+    r = data_manager.get_redis_connection()
+    if not r:
+        sys.exit(1)
+
+    # --- Lógica de Atualização ---
+    if args.update:
+        data_manager.run_update(r)
+        sys.exit(0)
+
+    # --- Lógica de Configuração Inicial ---
+    if not data_manager.run_initial_setup(r):
+        print("Houve um erro na configuração inicial. A aplicação não pode continuar.")
+        sys.exit(1)
+        
+    # --- Lógica Principal de Lookup ---
+    hash_recebida = args.hash_input
+    if not hash_recebida:
+        try:
+            hash_recebida = input("Insira a hash para consulta:\n-> ")
+        except KeyboardInterrupt:
+            print("\nOperação cancelada.")
+            sys.exit(0)
+
+    hash_recebida = hash_recebida.strip().lower()
+    if not hash_recebida:
+        print("Hash não fornecida.")
+        sys.exit(1)
+
+    if r.exists(hash_recebida):
+        dados = cast(Dict[str, str], r.hgetall(hash_recebida))
+        if not dados:
+            print("Hash encontrada, mas sem dados associados.")
+            sys.exit(1)
+        print("\n--- Hash Encontrada! ---")
+        print(f"Tipo:  {dados['tipo'] if 'tipo' in dados else 'N/A'}")
+        print(f"Senha: {dados['senha'] if 'senha' in dados else 'N/A'}")
+        print("------------------------")
     else:
-        return "Tipo de hash desconhecido ou tamanho inválido"
+        print("\nHash não encontrada na base de dados.")
 
-r = redis.Redis(
-    host='localhost',
-    port=6379,
-    db=0,
-    username='Redis',        
-    password='R3d1s!'        
-)
 
-hash_recebida = input("Insira o tipo de hash: \n->")
-tipo_hash = identifier(hash_recebida)
-print(f'O tipo de hash é: {tipo_hash}')
-
-if r.exists(hash_recebida):
-    dados = r.hgetall(hash_recebida)
-    print("Hash encontrada!")
-    print("Tipo:", dados[b"tipo"].decode())
-    print("Senha:", dados[b"senha"].decode())
-else:
-    print("Hash não encontrada.")
+if __name__ == "__main__":
+    main()
