@@ -1,1 +1,6 @@
 /.venv
+__pycache__/data_manager.cpython-312.pyc
+__pycache__/config.cpython-312.pyc
+wordlists/100k.txt
+wordlists/100k.txtZone.Identifier
+wordlists/senhas.txt

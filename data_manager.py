@@ -71,7 +71,7 @@ def seed_redis_from_csv(r, csv_path):
 
             for i, valor_hash in enumerate(lista_hashes):
                 tipo_hash = tipos_hash[i].upper()
-                pipe.hmset(valor_hash, {'senha': senha, 'tipo': tipo_hash})
+                pipe.hset(valor_hash, mapping={'senha': senha, 'tipo': tipo_hash})
                 total_entradas += 1
 
             if total_entradas % 100000 == 0:
@@ -124,8 +124,9 @@ def run_initial_setup(r):
             with open(fname, 'r') as infile:
                 if i != 0:
                     next(infile) # Pula o cabeçalho dos arquivos subsequentes
-                outfile.write(infile.read())
-    
+                for line in infile:
+                    if line.strip():  # só escreve linhas não vazias
+                        outfile.write(line)    
     # Limpa arquivos temporários
     for fname in temp_files:
         os.remove(fname)
