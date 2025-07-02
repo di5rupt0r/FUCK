@@ -3,6 +3,7 @@
 import sys
 import argparse
 import data_manager
+from logger import log
 import config
 from typing import cast, Dict
 
@@ -35,7 +36,7 @@ def main():
 
     # --- Lógica de Configuração Inicial ---
     if not data_manager.run_initial_setup(r):
-        print("Houve um erro na configuração inicial. A aplicação não pode continuar.")
+        log("Houve um erro na configuração inicial. A aplicação não pode continuar.")
         sys.exit(1)
         
     # --- Lógica Principal de Lookup ---
@@ -44,25 +45,25 @@ def main():
         try:
             hash_recebida = input("Insira a hash para consulta:\n-> ")
         except KeyboardInterrupt:
-            print("\nOperação cancelada.")
+            log("\nOperação cancelada.")
             sys.exit(0)
 
     hash_recebida = hash_recebida.strip().lower()
     if not hash_recebida:
-        print("Hash não fornecida.")
+        log("Hash não fornecida.")
         sys.exit(1)
 
     if r.exists(hash_recebida):
         dados = cast(Dict[str, str], r.hgetall(hash_recebida))
         if not dados:
-            print("Hash encontrada, mas sem dados associados.")
+            log("Hash encontrada, mas sem dados associados.")
             sys.exit(1)
-        print("\n--- Hash Encontrada! ---")
-        print(f"Tipo:  {dados['tipo'] if 'tipo' in dados else 'N/A'}")
-        print(f"Senha: {dados['senha'] if 'senha' in dados else 'N/A'}")
-        print("------------------------")
+        log("\n--- Hash Encontrada! ---")
+        log(f"Tipo:  {dados['tipo'] if 'tipo' in dados else 'N/A'}")
+        log(f"Senha: {dados['senha'] if 'senha' in dados else 'N/A'}")
+        log("------------------------")
     else:
-        print("\nHash não encontrada na base de dados.")
+        log("\nHash não encontrada na base de dados.")
 
 
 if __name__ == "__main__":
