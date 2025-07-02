@@ -22,8 +22,11 @@ echo "Salvando em '$OUTPUT_FILE'..."
 # Escreve o cabeçalho no arquivo de saída com todos os hashes solicitados
 echo "senha:md5:sha1:sha224:sha256:sha384:sha512" > "$OUTPUT_FILE"
 
-# Prepara um contador para feedback
+# --- Lógica da Barra de Progresso ---
+# Pega o número total de linhas para calcular a porcentagem
+TOTAL_LINES=$(wc -l < "$WORDLIST" | tr -d ' ')
 COUNT=0
+WIDTH=50 # Largura da barra de progresso em caracteres
 
 # Lê a wordlist linha por linha de forma eficiente
 while IFS= read -r senha || [[ -n "$senha" ]]; do
@@ -43,10 +46,19 @@ while IFS= read -r senha || [[ -n "$senha" ]]; do
 
     echo "${senha_clean}:${HASH_MD5}:${HASH_SHA1}:${HASH_SHA224}:${HASH_SHA256}:${HASH_SHA384}:${HASH_SHA512}" >> "$OUTPUT_FILE"
 
-    # Fornece feedback a cada 100.000 senhas processadas
     ((COUNT++))
-    if ! ((COUNT % 100000)); then
-        echo "... $COUNT senhas processadas."
+    # Atualiza a barra a cada 1000 linhas para não impactar a performance
+    # Ou atualiza uma última vez quando o contador chegar ao final
+    if (( COUNT % 1000 == 0 )) || (( COUNT == TOTAL_LINES )); then
+        PERCENT=$((COUNT * 100 / TOTAL_LINES))
+        FILLED_WIDTH=$((WIDTH * PERCENT / 100))
+        EMPTY_WIDTH=$((WIDTH - FILLED_WIDTH))
+
+        # Desenha a barra
+        printf "\r["
+        printf "%${FILLED_WIDTH}s" "" | tr ' ' '#'
+        printf "%${EMPTY_WIDTH}s" ""
+        printf "] %d%% (%d/%d)" "$PERCENT" "$COUNT" "$TOTAL_LINES"
     fi
 
 done < "$WORDLIST"

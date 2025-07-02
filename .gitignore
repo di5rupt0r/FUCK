@@ -4,3 +4,4 @@ __pycache__/config.cpython-312.pyc
 wordlists/100k.txt
 wordlists/100k.txtZone.Identifier
 wordlists/senhas.txt
+csv_data/master_hashes.csv
