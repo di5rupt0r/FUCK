@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  # Serviço do Redis
+  redis:
+    image: "redis:alpine"
+    container_name: fuck_redis_db # Nome fixo para o contêiner
+    # Mapeia a porta 6379 do container para a porta 6379 da sua máquina.
+    # Isso permite que o comando 'fuck' (rodando na sua máquina) acesse o Redis (rodando no Docker).
+    ports:
+      - "6379:6379"
+    # Garante que os dados do Redis persistam mesmo se o container for reiniciado
+    volumes:
+      - redis_data:/data
+    # Reinicia o container automaticamente se ele parar por algum motivo
+    restart: always
+
+volumes:
+  redis_data:
