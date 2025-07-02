@@ -32,16 +32,16 @@ while IFS= read -r senha || [[ -n "$senha" ]]; do
         continue
     fi
 
-    # Calcula todos os hashes. O comando 'tr -d' remove o lixo da saída dos comandos *-sum
-    HASH_MD5=$(echo -n "$senha" | md5sum | tr -d '  -')
-    HASH_SHA1=$(echo -n "$senha" | sha1sum | tr -d '  -')
-    HASH_SHA224=$(echo -n "$senha" | sha224sum | tr -d '  -')
-    HASH_SHA256=$(echo -n "$senha" | sha256sum | tr -d '  -')
-    HASH_SHA384=$(echo -n "$senha" | sha384sum | tr -d '  -')
-    HASH_SHA512=$(echo -n "$senha" | sha512sum | tr -d '  -')
+    # --- CORREÇÃO AQUI ---
+    senha_clean=$(echo -n "$senha" | tr -d '\r\n')
+    HASH_MD5=$(echo -n "$senha_clean" | md5sum | awk '{print $1}')
+    HASH_SHA1=$(echo -n "$senha_clean" | sha1sum | awk '{print $1}')
+    HASH_SHA224=$(echo -n "$senha_clean" | sha224sum | awk '{print $1}')
+    HASH_SHA256=$(echo -n "$senha_clean" | sha256sum | awk '{print $1}')
+    HASH_SHA384=$(echo -n "$senha_clean" | sha384sum | awk '{print $1}')
+    HASH_SHA512=$(echo -n "$senha_clean" | sha512sum | awk '{print $1}')
 
-    # Monta a linha e anexa ao arquivo de saída na ordem correta
-    echo "${senha}:${HASH_MD5}:${HASH_SHA1}:${HASH_SHA224}:${HASH_SHA256}:${HASH_SHA384}:${HASH_SHA512}" >> "$OUTPUT_FILE"
+    echo "${senha_clean}:${HASH_MD5}:${HASH_SHA1}:${HASH_SHA224}:${HASH_SHA256}:${HASH_SHA384}:${HASH_SHA512}" >> "$OUTPUT_FILE"
 
     # Fornece feedback a cada 100.000 senhas processadas
     ((COUNT++))
