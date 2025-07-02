@@ -1,100 +1,108 @@
-# Hash Lookup com Seeding Automático em Redis
+# F.U.C.K - Fast Universal Cracker Kit
 
-Este projeto é uma ferramenta de linha de comando para consulta de hashes (hash lookup) que utiliza uma base de dados Redis populada a partir de wordlists. A principal característica é o seu pipeline de dados inteligente e automatizado, que cuida da geração dos hashes e do "seeding" (população) da base de forma autônoma e performática na primeira execução.
+F.U.C.K é uma ferramenta de linha de comando para consulta de hashes (hash lookup) que utiliza uma base de dados Redis populada a partir de wordlists. Sua principal característica é o pipeline de dados inteligente e automatizado, que cuida da geração dos hashes e do "seeding" (população) da base de forma autônoma e performática.
+
+O projeto foi desenhado para ser uma ferramenta "instale e use". Um único script cuida de toda a configuração do ambiente, incluindo a inicialização do banco de dados Redis em um contêiner Docker.
 
 ## Funcionalidades Principais
 
-- **Setup Automatizado:** Na primeira execução, a ferramenta automaticamente:
-    1.  Detecta as wordlists disponíveis.
-    2.  Gera um CSV estruturado (`senha:hash1:hash2:...`) com múltiplos tipos de hash para cada senha.
-    3.  Popula a base Redis com milhões de entradas de forma otimizada.
-- **Consulta Instantânea:** As buscas por hash na base Redis são praticamente instantâneas (complexidade O(1)).
-- **Mecanismo de Atualização Inteligente:** Um comando `--update` permite adicionar novas wordlists à base sem a necessidade de reprocessar as antigas.
-- **Alta Performance:** O uso de scripts em Bash para a geração de hashes e `pipelines` do Redis para o seeding garante um desempenho ordens de magnitude superior a abordagens tradicionais em Python.
+-   **Instalação Simplificada:** Um único script (`install.sh`) configura todo o ambiente, incluindo a base de dados.
+-   **Ambiente Dockerizado:** O Redis roda em um contêiner Docker, garantindo um ambiente isolado, consistente e sem a necessidade de instalar o Redis manualmente no sistema.
+-   **Setup Automatizado:** Na primeira execução, a ferramenta automaticamente popula o banco de dados com os hashes gerados a partir das wordlists fornecidas.
+-   **Comando Global:** Após a instalação, a ferramenta fica disponível globalmente através do comando `fuck`.
+-   **Mecanismo de Atualização:** Um comando `--update` permite adicionar novas wordlists à base sem reprocessar as antigas.
 
 ---
 
 ## Arquitetura do Projeto
 
-O projeto é modularizado para garantir clareza e manutenibilidade.
+-   **`main.py`:** Orquestrador principal da aplicação, acessível globalmente pelo comando `fuck`.
+-   **`data_manager.py`:** Contém toda a lógica de gerenciamento de dados (setup inicial, atualizações, seeding).
+-   **`config.py`:** Centraliza as configurações do projeto.
+-   **`install.sh`:** Script de instalação que configura o ambiente Docker, as dependências Python e o comando global.
+-   **`uninstall.sh`:** Script para remover completamente a instalação e o ambiente Docker.
+-   **`docker-compose.yml`:** Define o serviço do Redis que roda em segundo plano.
+-   **`gerar_hashes.sh`:** Script em Bash otimizado para a geração de hashes em massa a partir das wordlists.
 
--   **`main.py` - Orquestrador Principal**
-    -   É o ponto de entrada da aplicação.
-    -   Responsável por interpretar os argumentos da linha de comando (como a hash a ser buscada ou o parâmetro `--update`).
-    -   Invoca o `data_manager` para realizar as tarefas de setup ou atualização.
-    -   Executa a consulta final no Redis e exibe o resultado para o usuário.
+---
 
--   **`data_manager.py` - O Motor da Aplicação**
-    -   Encapsula toda a lógica de gerenciamento de dados.
-    -   Contém a função `run_initial_setup`, que coordena todo o processo da primeira execução.
-    -   Contém a função `run_update`, que gerencia a adição de novas wordlists.
-    -   Chama o script `gerar_hashes.sh` para o processamento pesado dos arquivos.
-    -   Contém a função `seed_redis_from_csv`, que usa `pipelines` para popular o Redis de forma eficiente.
+## Instalação
 
--   **`config.py` - Arquivo de Configuração**
-    -   Centraliza todas as variáveis de configuração, como os detalhes de conexão do Redis, caminhos de diretórios e nomes de chaves de controle. Facilita a adaptação do projeto para diferentes ambientes.
+O processo de instalação foi projetado para ser o mais simples possível.
 
--   **`gerar_hashes.sh` - Script de Geração de Hashes**
-    -   Um script em Bash otimizado para performance.
-    -   Recebe uma wordlist como entrada e gera um arquivo CSV no formato `senha:md5:sha1:sha224:sha256:sha384:sha512`.
-    -   Utiliza ferramentas nativas do sistema (`md5sum`, `sha1sum`, etc.) para garantir a máxima velocidade no cálculo dos hashes.
+### Requisitos
+
+-   Um sistema operacional baseado em Linux ou macOS.
+-   **Docker** e **Docker Compose** instalados e em execução.
+-   Git (para clonar o repositório).
+-   Python 3.x e Pip.
+
+### Passos para Instalação
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/luan-garcia/FUCK.git](https://github.com/luan-garcia/FUCK.git)
+    cd FUCK
+    ```
+
+2.  **Execute o script de instalação:**
+    Este comando precisa ser executado com `sudo`, pois ele irá instalar o comando `fuck` em `/usr/local/bin` e gerenciar o Docker.
+    ```bash
+    sudo bash install.sh
+    ```
+
+**O que o instalador faz?**
+* Verifica se você tem Docker e Docker Compose.
+* Inicia o serviço do Redis em um contêiner Docker em segundo plano.
+* Instala as dependências Python (`redis`).
+* Configura o comando `fuck` para ser acessível de qualquer lugar no seu terminal.
+
+Ao final do processo, a ferramenta estará 100% pronta para uso.
 
 ---
 
 ## Como Usar
 
-### Requisitos
+### 1. Primeira Execução (Setup Automático de Dados)
 
--   Python 3.x
--   Servidor Redis em execução.
--   Um ambiente com Bash e as ferramentas `coreutils` (padrão em Linux e macOS).
--   Dependências Python: `pip install redis`
+Na primeira vez que você usar o comando `fuck` após a instalação, ele irá automaticamente:
+1.  Procurar por arquivos de wordlist na pasta `./wordlists/`.
+2.  Gerar os hashes para todas as senhas encontradas.
+3.  Popular a base de dados Redis com esses hashes.
 
-### 1. Estrutura de Pastas
+Este processo pode levar algum tempo dependendo do tamanho das suas wordlists, mas só precisa ser executado uma vez.
 
-Organize seu projeto da seguinte forma:
+### 2. Consultando uma Hash
 
-```
-/seu_projeto/
-├── main.py
-├── data_manager.py
-├── config.py
-├── gerar_hashes.sh
-├── requirements.txt
-└── wordlists/
-    └── rockyou.txt
-    └── outras_wordlists.txt
-```
-
-### 2. Primeira Execução (Setup Automático)
-
-1.  Coloque todos os seus arquivos de wordlist (.txt) dentro da pasta `wordlists/`.
-2.  Dê permissão de execução ao script Bash: `chmod +x gerar_hashes.sh`.
-3.  Rode o programa principal:
-    ```bash
-    python main.py
-    ```
-4.  Aguarde. A ferramenta irá detectar que é a primeira vez, gerar todos os hashes e popular o Redis. Ao final, ela entrará em modo de consulta.
-
-### 3. Consultando uma Hash
-
-Após o setup inicial, basta executar o programa passando a hash como argumento:
-
+Após o setup inicial, basta executar o comando `fuck` seguido da hash:
 ```bash
-python main.py 5d41402abc4b2a76b9719d911017c592
+fuck 5d41402abc4b2a76b9719d911017c592
 ```
 
-Ou rode sem argumentos para entrar em modo interativo:
-
+Ou rode sem argumentos para entrar no modo interativo:
 ```bash
-python main.py
+fuck
 ```
 
-### 4. Atualizando a Base com Novas Wordlists
+### 3. Atualizando a Base com Novas Wordlists
 
-1.  Simplesmente adicione um novo arquivo de wordlist (ex: `novas_senhas.txt`) à pasta `wordlists/`.
-2.  Execute o programa com o parâmetro `--update`:
+1.  Adicione um novo arquivo `.txt` com senhas na pasta `wordlists/`.
+2.  Execute o comando com o parâmetro `--update`:
     ```bash
-    python main.py --update
+    fuck --update
     ```
-3.  A ferramenta irá detectar **apenas o novo arquivo**, processá-lo e adicionar os novos hashes à base de dados existente.
+A ferramenta irá detectar e processar **apenas o novo arquivo**, adicionando os novos hashes à base de dados.
+
+---
+
+## Desinstalação
+
+Para remover completamente a ferramenta e o seu ambiente:
+
+1.  Navegue até o diretório do projeto.
+2.  Execute o script de desinstalação com `sudo`:
+    ```bash
+    sudo bash uninstall.sh
+    ```
+
+Este comando irá parar e remover o contêiner do Redis, apagar os volumes de dados e remover o comando `fuck` do seu sistema.
